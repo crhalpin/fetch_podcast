@@ -2,17 +2,20 @@
 
 fetch\_podcast is a command-line tool for fetching podcasts.  Unlike many
 similar tools, fetch\_podcast allows the user to speicfy names for the
-downloaded files.  It is written in clojure, but has no other dependencies.
+downloaded files.  It is written in clojure and uses the leiningen build
+system, but has no other dependencies.
 
 ## Installation
 
-git checkout ...
+git clone https://github.com/crhalpin/fetch\_podcast.git
+
+cd fetch\_podcast
 
 lein uberjar
 
 ## Usage
 
-    $ java -jar fetch_podcast-0.1.0-SNAPSHOT-standalone.jar [args]
+    $ java -jar fetch_podcast-0.1.0-standalone.jar [args]
 
 When run with no arguments, fetch\_podcast will download any new episodes from
 all configured feeds.
