@@ -37,10 +37,10 @@ pulled from "http://relay.fm/penaddict/feed", with a somewhat more
 complex naming function.
 
 An excerpt of the XML from this second feed looks like:
-    <item>
-      <title>The Pen Addict 1: Glossary</title>
-      <enclosure url="http://relay-fm.herokuapp.com/penaddict/1/listen.mp3"
-        length="16211569" type="audio/mp3"/>
+    &lt;item&gt;
+      &lt;title&gt;The Pen Addict 1: Glossary&lt;/title&gt;
+      &lt;enclosure url="http://relay-fm.herokuapp.com/penaddict/1/listen.mp3"
+        length="16211569" type="audio/mp3"/&gt;
 
 As you might expect from the above, all of the enclosures in this feed
 use "listen.mp3" as the filename, so we can't actually use that
