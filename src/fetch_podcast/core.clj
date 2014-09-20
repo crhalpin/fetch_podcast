@@ -3,6 +3,7 @@
   (:require [clojure.set :as set])
   (:require [clojure.string :as str])
   (:require [clojure.java.io :as io])
+  (:require [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
 
 (defn do_homedir [fname]
@@ -48,15 +49,6 @@
                                 (recur rc tl)))))) tl )
           (recur rc tl))))))
 
-; Construct a hash of included podcast names
-(defn get_inclusion_list [args]
-  (loop [rc #{} arg_p args]
-    (if (empty? arg_p)
-      rc
-      (if (contains? #{"-v" "-c" "-i"} (first arg_p))
-        (recur rc (rest arg_p))
-        (recur (conj rc (first arg_p)) (rest arg_p))))))
-
 ; Construct a list of feeds to fetch
 (defn get_feed_list [tgts]
   (loop [rc [] ifeeds (read_pref "feeds.clj")]
@@ -69,12 +61,19 @@
      :else
        (recur rc (rest ifeeds)))) )
 
+; Define allowed options
+(def cli-options
+  [["-v" "--verbose"],
+   ["-c" "--catchup"],
+   ["-i" "--init"] ] )
+
 (defn -main [& args]
   ; Parse arguments
-  (let [verbose (some #{"-v"} args)
-        catchup (some #{"-c"} args)
-        reinit  (some #{"-i"} args)
-        tgts    (get_inclusion_list args)]
+  (let [opt_map (parse-opts args cli-options)
+        verbose ((opt_map :options) :verbose)
+        catchup ((opt_map :options) :catchup)
+        reinit  ((opt_map :options) :init)
+        tgts    (into #{} (opt_map :arguments)) ]
 
     ;TODO: Print a warning for unknown feeds
     (loop
