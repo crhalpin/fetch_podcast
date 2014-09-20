@@ -3,7 +3,7 @@
 fetch\_podcast is a command-line tool for fetching podcasts.  Unlike many
 similar tools, fetch\_podcast allows the user to speicfy names for the
 downloaded files.  It is written in [clojure](http://clojure.org/) and uses the
-[leiningen](http://leiningen.org/) build system, but has no other dependencies.
+[leiningen](http://leiningen.org/) build system.
 
 ## Installation
 
