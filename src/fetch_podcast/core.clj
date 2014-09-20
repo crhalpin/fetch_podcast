@@ -61,15 +61,38 @@
      :else
        (recur rc (rest ifeeds)))) )
 
-; Define allowed options
-(def cli-options
-  [["-v" "--verbose"],
-   ["-c" "--catchup"],
-   ["-i" "--init"] ] )
+; Process a specified feed, downladed as necessary
+(defn process_feed [feed done verbose catchup]
+  (loop [new_items #{}
+         items (parse_feed (xml/parse (feed :feed))) ]
+
+    (if (empty? items)
+      new_items
+
+      (let [hd (first items) tl (rest items)]
+        (if (contains? done (get_key (hd :enclosure)))
+          (recur new_items tl)
+
+          (let [url (hd :enclosure)
+                ftgt (do_homedir
+                      (str (feed :path) "/"
+                           ((eval (feed :name_fn)) hd)) ) ]
+            (do
+              (if verbose
+                (do (print (str url " -> " ftgt " ..."))
+                    (flush) ))
+              (if (not catchup) (copy url ftgt) )
+              (if verbose (println " done"))
+              (recur (conj new_items
+                           (get_key url)) tl))))))))
+
 
 (defn -main [& args]
   ; Parse arguments
-  (let [opt_map (parse-opts args cli-options)
+  (let [cli-options  [["-v" "--verbose"]
+                      ["-c" "--catchup"]
+                      ["-i" "--init"] ]
+        opt_map (parse-opts args cli-options)
         verbose ((opt_map :options) :verbose)
         catchup ((opt_map :options) :catchup)
         reinit  ((opt_map :options) :init)
@@ -85,32 +108,8 @@
     (if (empty? feeds)
       (save_pref "fetchlog.clj" done)
 
-      ; Otherwise, iterate over the list of feeds
-      (let [fhd (first feeds) ftl (rest feeds)]
+      ; Otherwise, process the current feed
+      (let [fhd (first feeds) ftl (rest feeds) ]
         (recur ftl
                (set/union done
-                          ; foreach feed, iterate over all the items
-                          (loop [new_items #{}
-                                 items (parse_feed (xml/parse (fhd :feed)))]
-                            ; When there are no items left, we're done.
-                            ; return the list of items fetched
-                            (if (empty? items)
-                              new_items
-
-                              ; Otherwise, see if we've fetched the current item yet
-                              (let [hd (first items) tl (rest items)]
-                                (if (not (contains? done (get_key (hd :enclosure))))
-                                  ; if we've not yet snarfed this one,
-                                  (let [url (hd :enclosure)
-                                        ftgt (do_homedir
-                                              (str (fhd :path) "/"
-                                                   ((eval (fhd :name_fn)) hd)) ) ]
-                                    (do
-                                      (if verbose
-                                        (do (print (str url " -> " ftgt " ..."))
-                                            (flush) ))
-                                      (if (not catchup) (copy url ftgt) )
-                                      (if verbose (println " done"))
-                                      (recur (conj new_items
-                                                   (get_key url)) tl)))
-                                  (recur new_items tl))))))))))))
+                          (process_feed fhd done verbose catchup))))))))
