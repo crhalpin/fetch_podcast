@@ -81,6 +81,8 @@
                {} )
            (contains? last_resp "Etag")
              {"If-None-Match" (last_resp "Etag") }
+           (contains? last_resp "ETag")
+             {"If-None-Match" (last_resp "ETag") }
            (contains? last_resp "Last-Modified")
              {"If-Modified-Since" (last_resp "Last-Modified")} )]
       (if verbose (do (println (str "Updating " (feed :title) " from " url ))))
