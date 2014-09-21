@@ -25,7 +25,9 @@ all configured feeds.
 
 * -c : catch up on podcasts, without downloading them (i.e., mark all read)
 
-* -i : re-initialize list of see podcasts
+* -i : re-initialize list of seen podcasts
+
+* -F : force refresh of cached feed XML files
 
 ## Getting started
 

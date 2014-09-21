@@ -5,7 +5,7 @@
 fetch\_podcast reads a list of feeds from ~/.fetch_podcast/feeds.clj.
 This file contains a clojure vector where each element is a map that
 describes a feed.  Each map must contain 'title', 'path', 'feed', and
-'name_fn'.  For example:
+'name\_fn'.  For example:
 
     [{:title "FLOSS_Weekly"
       :path "~/Podcasts/FLOSS_Weekly"
@@ -28,8 +28,8 @@ describes a feed.  Each map must contain 'title', 'path', 'feed', and
             (clojure.string/replace #" +" "_")) )) }
     ]
 
-The above defines two feeds.  The first, "FLOSS_Weekly", will be
-downloaded to "~/Podcasts/FLOSS_Weekly", pulled from
+The above defines two feeds.  The first, "FLOSS\_Weekly", will be
+downloaded to "~/Podcasts/FLOSS\_Weekly", pulled from
 "http://leo.am/podcasts/floss", and which uses a name function that
 just takes the last element of the enclosure from the podcast feed.
 The second, "PenAddict", will be downloaded to "~/Podcasts/PenAddict",
@@ -53,15 +53,18 @@ colon.
 ## Downloading podcasts
 
 Before the first time you run fetch\_podcast, you'll need to create
-all the directories mentioned in your feeds.clj.
+all the directories mentioned in your feeds.clj, as well as
+"~/.fetch\_podcast/cache".
 
-It is probably a good idea to run fetch\_podcast with "-i -c -v"
-(initialize list of fetched files, catch up, verbose), to see a list
-of what it wants to download and where these files will be saved.
-This also lets you test your file naming functions.
+On your first run of fetch\_podcast, it is necessary to specify at
+least "-Fi" as options to initialize some bookkeeping files.  It is
+probably a better idea to use "-Ficv" (fetch fresh XML feeds,
+initialize list of fetched files, catch up, verbose), to see a list of
+what it wants to download and where these files will be saved.  This
+also lets you test your file naming functions.
 
 If everything looks good, you can then re-run fetch\_podcast with
-either "-i" or "-i -v" to fetch everything previously listed.
+either "-i" or "-iv" to fetch everything previously listed.
 
 You can also specify feed names (PenAddict or FLOSS_Weekly in the
 above example) to only fetch particular feeds.  Note that the "-i"

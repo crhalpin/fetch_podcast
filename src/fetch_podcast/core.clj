@@ -3,6 +3,7 @@
   (:require [clojure.set :as set])
   (:require [clojure.string :as str])
   (:require [clojure.java.io :as io])
+  (:require [clj-http.client :as http])
   (:require [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
 
@@ -14,6 +15,9 @@
 
 (defn save_pref [fname data]
   (spit (do_homedir (str "~/.fetch_podcast/" fname)) data) )
+
+(defn cache_fname [feed]
+  (do_homedir (str "~/.fetch_podcast/cache/" (feed :title))))
 
 (defn copy [uri file]
   (with-open [in (io/input-stream uri)
@@ -29,6 +33,7 @@
 (defn get_key [x]
   (keyword (sha256 x)))
 
+; Parse feed XML to return an array of elements
 (defn parse_feed [xdata]
   (loop [rc [] elem ( (first (xdata :content)) :content ) ]
     (if (empty? elem)
@@ -61,55 +66,93 @@
      :else
        (recur rc (rest ifeeds)))) )
 
-; Process a specified feed, downladed as necessary
-(defn process_feed [feed done verbose catchup]
-  (loop [new_items #{}
-         items (parse_feed (xml/parse (feed :feed))) ]
+; Fetch a copy of the given feed
+(defn fetch_feed [feed cache options]
+  (let [verbose (options :verbose)]
+    (let [url (feed :feed)
+          last_resp (cache (get_key url))
+          headers
+          (cond
+           (nil? last_resp) {}
+           (contains? last_resp "Expires")
+             (if (pos? (compare (new java.util.Date (last_resp "Expires"))
+                                (new java.util.Date)))
+               nil
+               {} )
+           (contains? last_resp "Etag")
+             {"If-None-Match" (last_resp "Etag") }
+           (contains? last_resp "Last-Modified")
+             {"If-Modified-Since" (last_resp "Last-Modified")} )]
+      (if verbose (do (println (str "Updating " (feed :title) " from " url ))))
+      (if (nil? headers)
+        (do (println "\tCached copy not expired, using that")
+            nil) ; Not expired, do nothing
+        (let [http_resp (http/get url {:headers headers :throw-exceptions false}) ]
+          (cond
+           (= (http_resp :status) 304)
+             (do (println "\tGot 304 not modified, using cache")
+                 nil) ; Not fetched, do nothing
+           (= (http_resp :status) 200)
+             (do
+               (println "\tFetched new copy")
+               (spit (cache_fname feed) (http_resp :body))
+               { (get_key url) (http_resp :headers) } )
+           :else
+             (throw (str "Error loading " url))))))))
 
-    (if (empty? items)
-      new_items
+; Process a specified feed, downloading enclosures as required
+(defn process_feed [feed done options]
+  (let [verbose (options :verbose)
+        catchup (options :catchup)]
+    (loop [new_items #{}
+           items (parse_feed (xml/parse (cache_fname feed))) ]
 
-      (let [hd (first items) tl (rest items)]
-        (if (contains? done (get_key (hd :enclosure)))
-          (recur new_items tl)
+      (if (empty? items)
+        new_items
 
-          (let [url (hd :enclosure)
-                ftgt (do_homedir
-                      (str (feed :path) "/"
-                           ((eval (feed :name_fn)) hd)) ) ]
-            (do
-              (if verbose
-                (do (print (str url " -> " ftgt " ..."))
-                    (flush) ))
-              (if (not catchup) (copy url ftgt) )
-              (if verbose (println " done"))
-              (recur (conj new_items
-                           (get_key url)) tl))))))))
+        (let [hd (first items) tl (rest items)]
+          (if (contains? done (get_key (hd :enclosure)))
+            (recur new_items tl)
 
+            (let [url (hd :enclosure)
+                  ftgt (do_homedir
+                        (str (feed :path) "/"
+                             ((eval (feed :name_fn)) hd)) ) ]
+              (do
+                (if verbose (println url))
+                (if (not catchup) (copy url ftgt) )
+                (if verbose (println (str "\t" ftgt)))
+                (recur (conj new_items
+                             (get_key url)) tl)))))))))
 
 (defn -main [& args]
   ; Parse arguments
   (let [cli-options  [["-v" "--verbose"]
                       ["-c" "--catchup"]
-                      ["-i" "--init"] ]
+                      ["-i" "--init"]
+                      ["-F" "--force-fetch"] ]
         opt_map (parse-opts args cli-options)
-        verbose ((opt_map :options) :verbose)
-        catchup ((opt_map :options) :catchup)
-        reinit  ((opt_map :options) :init)
+        options (opt_map :options)
+        reinit  (options :init)
+        refetch (options :force-fetch)
         tgts    (into #{} (opt_map :arguments)) ]
 
     ;TODO: Print a warning for unknown feeds
     (loop
       [feeds (get_feed_list tgts)
+       cache (if refetch {} (read_pref "cache_metadata.clj"))
        done  (if reinit #{} (read_pref "fetchlog.clj")) ]
 
     ; If there were no feeds left to fetch, we're done.
     ; Save a fetchlog and exit
     (if (empty? feeds)
-      (save_pref "fetchlog.clj" done)
+      (do
+        (save_pref "fetchlog.clj" done)
+        (save_pref "cache_metadata.clj" cache) )
 
       ; Otherwise, process the current feed
-      (let [fhd (first feeds) ftl (rest feeds) ]
+      (let [fhd (first feeds) ftl (rest feeds)]
         (recur ftl
+               (merge cache (fetch_feed fhd cache options))
                (set/union done
-                          (process_feed fhd done verbose catchup))))))))
+                          (process_feed fhd done options)) ))))))
