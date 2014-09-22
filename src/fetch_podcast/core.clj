@@ -74,11 +74,10 @@
           headers
           (cond
            (nil? last_resp) {}
-           (contains? last_resp "Expires")
-             (if (pos? (compare (new java.util.Date (last_resp "Expires"))
-                                (new java.util.Date)))
-               nil
-               {} )
+           (and (contains? last_resp "Expires")
+                (pos? (compare (new java.util.Date (last_resp "Expires"))
+                               (new java.util.Date))))
+             nil
            (contains? last_resp "Etag")
              {"If-None-Match" (last_resp "Etag") }
            (contains? last_resp "ETag")
@@ -87,16 +86,13 @@
              {"If-Modified-Since" (last_resp "Last-Modified")} )]
       (if verbose (do (println (str "Updating " (feed :title) " from " url ))))
       (if (nil? headers)
-        (do (println "\tCached copy not expired, using that")
-            nil) ; Not expired, do nothing
+        nil ; Not expired, do nothing
         (let [http_resp (http/get url {:headers headers :throw-exceptions false}) ]
           (cond
            (= (http_resp :status) 304)
-             (do (println "\tGot 304 not modified, using cache")
-                 nil) ; Not fetched, do nothing
+             nil ; Not fetched, do nothing
            (= (http_resp :status) 200)
              (do
-               (println "\tFetched new copy")
                (spit (cache_fname feed) (http_resp :body))
                { (get_key url) (http_resp :headers) } )
            :else
