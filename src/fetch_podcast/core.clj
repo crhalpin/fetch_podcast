@@ -68,7 +68,7 @@
 
 ; Fetch a copy of the given feed
 (defn fetch_feed [feed cache options]
-  (let [verbose (options :verbose)]
+  (let [verbosity (options :verbosity)]
     (let [url (feed :feed)
           last_resp (cache (get_key url))
           headers
@@ -84,15 +84,18 @@
              {"If-None-Match" (last_resp "ETag") }
            (contains? last_resp "Last-Modified")
              {"If-Modified-Since" (last_resp "Last-Modified")} )]
-      (if verbose (do (println (str "Updating " (feed :title) " from " url ))))
+      (if (> verbosity 1) (do (println (str "Updating " (feed :title) " from " url ))))
       (if (nil? headers)
-        nil ; Not expired, do nothing
+        (do (if (> verbosity 1) (println "\tNot expired, using cache"))
+            nil)
         (let [http_resp (http/get url {:headers headers :throw-exceptions false}) ]
           (cond
            (= (http_resp :status) 304)
-             nil ; Not fetched, do nothing
+             (do (if (> verbosity 1) (println "\tGot 304, using cache"))
+                 nil)
            (= (http_resp :status) 200)
              (do
+               (if (> verbosity 1) (println "\tFetching"))
                (spit (cache_fname feed) (http_resp :body))
                { (get_key url) (http_resp :headers) } )
            :else
@@ -100,7 +103,7 @@
 
 ; Process a specified feed, downloading enclosures as required
 (defn process_feed [feed done options]
-  (let [verbose (options :verbose)
+  (let [verbosity (options :verbosity)
         catchup (options :catchup)]
     (loop [new_items #{}
            items (parse_feed (xml/parse (cache_fname feed))) ]
@@ -117,15 +120,18 @@
                         (str (feed :path) "/"
                              ((eval (feed :name_fn)) hd)) ) ]
               (do
-                (if verbose (println url))
+                (if (> verbosity 0) (println url))
                 (if (not catchup) (copy url ftgt) )
-                (if verbose (println (str "\t" ftgt)))
+                (if (> verbosity 0)  (println (str "\t-> " ftgt)))
                 (recur (conj new_items
                              (get_key url)) tl)))))))))
 
 (defn -main [& args]
   ; Parse arguments
-  (let [cli-options  [["-v" "--verbose"]
+  (let [cli-options  [["-v" nil "Verbosity"
+                       :id :verbosity
+                       :default 0
+                       :assoc-fn (fn [m k _] (update-in m [k] inc)) ]
                       ["-c" "--catchup"]
                       ["-i" "--init"]
                       ["-F" "--force-fetch"] ]
