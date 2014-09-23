@@ -58,18 +58,6 @@
                                 (recur rc tl)))))) tl )
           (recur rc tl))))))
 
-; Construct a list of feeds to fetch
-(defn get_feed_list [tgts]
-  (loop [rc [] ifeeds (read_pref "feeds.clj")]
-    (cond
-     (empty? ifeeds)
-       rc
-     (or (empty? tgts)
-         (contains? tgts ((first ifeeds) :title)))
-       (recur (conj rc (first ifeeds)) (rest ifeeds))
-     :else
-       (recur rc (rest ifeeds)))) )
-
 ; Fetch a copy of the given feed
 (defn fetch_feed [feed cache options]
   (let [verbosity (options :verbosity)]
@@ -106,19 +94,32 @@
              (throw (str "Error loading " url))))))))
 
 ; Process a specified feed, downloading enclosures as required
-(defn process_feed [feed done options]
+(defn process_feed [feed done tgts options]
   (let [verbosity (options :verbosity)
         catchup (options :catchup)
         dry-run (options :dry-run)
-        skip (or catchup dry-run) ]
+        skip (or catchup dry-run)
+        episodes (options :episodes)
+        ep_tgts (if episodes tgts nil)
+        fd_tgts (if (and (not episodes)
+                         (not (empty? tgts))) tgts nil) ]
     (loop [new_items #{}
            items (parse_feed (xml/parse (cache_fname feed))) ]
 
-      (if (empty? items)
+      ; If we have no more items, or if there is a list of feeds that
+      ; we're not on, then we're done
+      (if (or (empty? items)
+              (and (not (nil? fd_tgts))
+                   (not (contains? tgts (feed :title))) ))
         new_items
 
-        (let [hd (first items) tl (rest items)]
-          (if (contains? done (get_key (hd :enclosure)))
+        (let [hd (first items) tl (rest items)
+              hv (sha256 (hd :enclosure))]
+          ; If we've already gotten this ep, or if there was a list of eps
+          ;  that this is not on, then proceed to the next item
+          (if (or (contains? done (keyword hv))
+                  (and (not (nil? ep_tgts))
+                       (not (contains? tgts hv ))))
             (recur new_items tl)
 
             (let [url (hd :enclosure)
@@ -126,7 +127,7 @@
                         (str (feed :path) "/"
                              ((eval (feed :name_fn)) hd)) ) ]
               (do
-                (if (> verbosity 0) (println url))
+                (if (> verbosity 0) (println (str hv "\n\t" url) ))
                 (if (not skip) (copy url ftgt) )
                 (if (> verbosity 0)  (println (str "\t-> " ftgt)))
                 (if dry-run
@@ -143,6 +144,7 @@
                       ["-c" "--catchup"]
                       ["-d" "--dry-run"]
                       ["-i" "--init"]
+                      ["-e" "--episodes"]
                       ["-F" "--force-fetch"] ]
         opt_map (parse-opts args cli-options)
         options (opt_map :options)
@@ -152,7 +154,7 @@
 
     ;TODO: Print a warning for unknown feeds
     (loop
-      [feeds (get_feed_list tgts)
+      [feeds (read_pref "feeds.clj" [])
        cache (read_pref "cache_metadata.clj" {} refetch)
        done  (read_pref "fetchlog.clj" #{} reinit ) ]
 
@@ -168,4 +170,4 @@
         (recur ftl
                (merge cache (fetch_feed fhd cache options))
                (set/union done
-                          (process_feed fhd done options)) ))))))
+                          (process_feed fhd done tgts options)) ))))))
