@@ -20,9 +20,10 @@
   (do_homedir (str "~/.fetch_podcast/cache/" (feed :title))))
 
 (defn copy [uri file]
-  (with-open [in (io/input-stream uri)
-              out (io/output-stream file)]
-    (io/copy in out)) )
+  (if (not (.exists (io/as-file file)))
+    (with-open [in (io/input-stream uri)
+                out (io/output-stream file)]
+      (io/copy in out))))
 
 (defn sha256 [x]
   (let [hash (java.security.MessageDigest/getInstance "SHA-256")]
