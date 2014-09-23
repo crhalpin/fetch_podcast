@@ -108,7 +108,9 @@
 ; Process a specified feed, downloading enclosures as required
 (defn process_feed [feed done options]
   (let [verbosity (options :verbosity)
-        catchup (options :catchup)]
+        catchup (options :catchup)
+        dry-run (options :dry-run)
+        skip (or catchup dry-run) ]
     (loop [new_items #{}
            items (parse_feed (xml/parse (cache_fname feed))) ]
 
@@ -125,10 +127,12 @@
                              ((eval (feed :name_fn)) hd)) ) ]
               (do
                 (if (> verbosity 0) (println url))
-                (if (not catchup) (copy url ftgt) )
+                (if (not skip) (copy url ftgt) )
                 (if (> verbosity 0)  (println (str "\t-> " ftgt)))
-                (recur (conj new_items
-                             (get_key url)) tl)))))))))
+                (if dry-run
+                  (recur new_items tl)
+                  (recur (conj new_items
+                               (get_key url)) tl))))))))))
 
 (defn -main [& args]
   ; Parse arguments
@@ -137,6 +141,7 @@
                        :default 0
                        :assoc-fn (fn [m k _] (update-in m [k] inc)) ]
                       ["-c" "--catchup"]
+                      ["-d" "--dry-run"]
                       ["-i" "--init"]
                       ["-F" "--force-fetch"] ]
         opt_map (parse-opts args cli-options)
