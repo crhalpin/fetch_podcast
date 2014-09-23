@@ -10,8 +10,11 @@
 (defn do_homedir [fname]
   (str/replace fname #"^~" (str (System/getenv "HOME") )) )
 
-(defn read_pref [fname]
-  (read-string (slurp (do_homedir (str "~/.fetch_podcast/" fname)))) )
+(defn read_pref [fname & [default reset] ]
+  (let [file_path (do_homedir (str "~/.fetch_podcast/" fname))]
+    (if (or reset (not (.exists (io/as-file file_path))))
+      default
+      (read-string (slurp file_path)))))
 
 (defn save_pref [fname data]
   (spit (do_homedir (str "~/.fetch_podcast/" fname)) data) )
@@ -145,8 +148,8 @@
     ;TODO: Print a warning for unknown feeds
     (loop
       [feeds (get_feed_list tgts)
-       cache (if refetch {} (read_pref "cache_metadata.clj"))
-       done  (if reinit #{} (read_pref "fetchlog.clj")) ]
+       cache (read_pref "cache_metadata.clj" {} refetch)
+       done  (read_pref "fetchlog.clj" #{} reinit ) ]
 
     ; If there were no feeds left to fetch, we're done.
     ; Save a fetchlog and exit
