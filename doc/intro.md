@@ -44,7 +44,7 @@ An excerpt of the XML from this second feed looks like:
         length="16211569" type="audio/mp3"/>
 
 As you might expect from the above, all of the enclosures in this feed
-use "listen.mp3" as the filename, so we can't actually use that
+use "listen.mp3" as the filename, so we cannot actually use that
 because each new episode would overwrite the last.  Instead, we take
 the second to last path component ("1" in this example), convert it to
 a 5 digit number, then tack on the part of the title from after the
@@ -52,19 +52,12 @@ colon.
 
 ## Downloading podcasts
 
-Before the first time you run fetch\_podcast, you'll need to create
+Before the first time you run fetch\_podcast, you will need to create
 all the directories mentioned in your feeds.clj, as well as
 "~/.fetch\_podcast/cache".
 
-On your first run of fetch\_podcast, it is necessary to specify at
-least "-Fi" as options to initialize some bookkeeping files.  It is
-probably a better idea to use "-Ficv" (fetch fresh XML feeds,
-initialize list of fetched files, catch up, verbose), to see a list of
-what it wants to download and where these files will be saved.  This
-also lets you test your file naming functions.
-
-If everything looks good, you can then re-run fetch\_podcast with
-either "-i" or "-iv" to fetch everything previously listed.
+You will probably want to run fetch\_podcast with the "-dv" options, to make
+sure that your naming functions work as desired.
 
 You can also specify feed names (PenAddict or FLOSS_Weekly in the
 above example) to only fetch particular feeds.  Note that the "-i"
