@@ -57,12 +57,15 @@ all the directories mentioned in your feeds.clj, as well as
 "~/.fetch\_podcast/cache".
 
 You will probably want to run fetch\_podcast with the "-dv" options, to make
-sure that your naming functions work as desired.
-
-You can also specify feed names (PenAddict or FLOSS_Weekly in the
-above example) to only fetch particular feeds.  Note that the "-i"
-option clears the list of fetched files entirely, not just for the
-feed specified.
+sure that your naming functions work as desired.  In verbose mode,
+fetch\_podcast outputs three lines for each episodes.  The first is a unique
+identifier, the second is the URL of the enclosure, and the third is the
+filename determined from your naming function.
 
 Once everything is configured, it should be sufficient to periodically
 run fetch\_podcast to download new episodes from your feeds.
+
+You can also specify feed names (PenAddict or FLOSS_Weekly in the
+above example) to operate on particular feeds (listing them, downloading them,
+or marking them read).  Alternately, with the "-e" argument, you can specify
+particular episodes (using their unique identifier) rather than feeds.

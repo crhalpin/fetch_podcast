@@ -4,6 +4,7 @@
   (:require [clojure.string :as str])
   (:require [clojure.java.io :as io])
   (:require [clj-http.client :as http])
+  (:require [clojure.data.codec.base64 :as b64])
   (:require [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
 
@@ -32,7 +33,9 @@
   (let [hash (java.security.MessageDigest/getInstance "SHA-256")]
     (. hash update (.getBytes x))
     (let [digest (.digest hash)]
-      (apply str (map #(format "%02x" (bit-and % 0xff)) digest)))))
+      (-> (String. (b64/encode digest) "UTF-8")
+          (str/replace "=" "")
+          (str/replace "/" "_") ))))
 
 (defn get_key [x]
   (keyword (sha256 x)))
