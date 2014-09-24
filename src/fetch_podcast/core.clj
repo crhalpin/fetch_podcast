@@ -8,28 +8,40 @@
   (:require [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
 
-(defn do_homedir [fname]
-  (str/replace fname #"^~" (str (System/getenv "HOME") )) )
+(defn do_homedir
+  "Expand ~/ to current user's HOME"
+  [fname]
+  (str/replace fname #"^~/" (str (System/getenv "HOME") "/" )) )
 
-(defn read_pref [fname & [default reset] ]
+(defn read_pref
+  "Read a preference file, if it exists"
+  [fname & [default reset] ]
   (let [file_path (do_homedir (str "~/.fetch_podcast/" fname))]
     (if (or reset (not (.exists (io/as-file file_path))))
       default
       (read-string (slurp file_path)))))
 
-(defn save_pref [fname data]
+(defn save_pref
+  "Save a preference file"
+  [fname data]
   (spit (do_homedir (str "~/.fetch_podcast/" fname)) data) )
 
-(defn cache_fname [feed]
+(defn cache_fname
+  "Get the cache file name for a given feed"
+  [feed]
   (do_homedir (str "~/.fetch_podcast/cache/" (feed :title))))
 
-(defn copy [uri file]
+(defn copy
+  "Copy a URI to a file, if the target did not exist"
+  [uri file]
   (if (not (.exists (io/as-file file)))
     (with-open [in (io/input-stream uri)
                 out (io/output-stream file)]
       (io/copy in out))))
 
-(defn sha256 [x]
+(defn sha256
+  "Get a base64(ish) sha256 of a string."
+  [x]
   (let [hash (java.security.MessageDigest/getInstance "SHA-256")]
     (. hash update (.getBytes x))
     (let [digest (.digest hash)]
@@ -37,32 +49,43 @@
           (str/replace "=" "")
           (str/replace "/" "_") ))))
 
-(defn get_key [x]
-  (keyword (sha256 x)))
+(defn get_key [x] (keyword (sha256 x)))
 
-; Parse feed XML to return an array of elements
-(defn parse_feed [xdata]
-  (loop [rc [] elem ( (first (xdata :content)) :content ) ]
+(defn parse_item
+  "Parse an XML item to produce a map describing the feed"
+  [xdata]
+  (loop [rc {} elem xdata]
     (if (empty? elem)
       rc
+
       (let [hd (first elem) tl (rest elem)]
+        (cond
+         (contains? #{:title :link :guid :pubDate} (hd :tag) )
+           (recur (assoc rc (hd :tag) (first (hd :content))) tl)
+         (= (hd :tag) :enclosure)
+           (recur (assoc rc :enclosure ((hd :attrs) :url) ) tl )
+         :else
+           (recur rc tl))))))
+
+(defn parse_feed
+  "Parse an XML feed, returning an array of maps describing the enclosures"
+  [xdata]
+  ; Feeds start out as <rss><channel>, so grab the content of the channel
+  (loop [rc [] elem ( (first (xdata :content)) :content ) ]
+    ; When there are no more elements in the channel, we're done
+    (if (empty? elem)
+      rc
+
+      (let [hd (first elem) tl (rest elem)]
+        ; If the current element is an item, we want to parse it.
+        ; Otherwise, move on to the next element.
         (if (= (hd :tag) :item)
-          (recur (conj rc
-                       (loop [rc {} elem (hd :content)]
-                         (if (empty? elem)
-                           rc
-                           (let [hd (first elem) tl (rest elem)]
-                             (cond
-                              (contains? #{:title :link :guid :pubDate} (hd :tag) )
-                                (recur (assoc rc (hd :tag) (first (hd :content))) tl)
-                              (= (hd :tag) :enclosure)
-                                (recur (assoc rc :enclosure ((hd :attrs) :url) ) tl )
-                              :else
-                                (recur rc tl)))))) tl )
+          (recur (conj rc (parse_item (hd :content))) tl )
           (recur rc tl))))))
 
-; Fetch a copy of the given feed
-(defn fetch_feed [feed cache options]
+(defn fetch_feed
+  "Fetch an XML feed with caching and If-None-Match/If-Modified-Since"
+  [feed cache options]
   (let [verbosity (options :verbosity)]
     (let [url (feed :feed)
           last_resp (cache (get_key url))
@@ -96,8 +119,9 @@
            :else
              (throw (str "Error loading " url))))))))
 
-; Process a specified feed, downloading enclosures as required
-(defn process_feed [feed done tgts options]
+(defn process_feed
+  "Process a specified feed, downloading enclosures if required"
+  [feed done tgts options]
   (let [verbosity (options :verbosity)
         catchup (options :catchup)
         dry-run (options :dry-run)
