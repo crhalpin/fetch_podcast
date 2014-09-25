@@ -55,9 +55,13 @@
   "Parse an XML item to produce a map describing the feed"
   [xdata]
   (loop [rc {} elem xdata]
+    ; If there are no more elements in this <item>, we're done
     (if (empty? elem)
       rc
 
+      ; Otherwise, see if this element is one of the desired ones.  If
+      ; so, add it in to the rc.  For the enclosure, grab the URL
+      ; attribute.  Then, move on to the next element.
       (let [hd (first elem) tl (rest elem)]
         (cond
          (contains? #{:title :link :guid :pubDate} (hd :tag) )
