@@ -10,11 +10,11 @@ downloaded files.  It is written in [clojure](http://clojure.org/) and uses the
     $ git clone https://github.com/crhalpin/fetch_podcast.git
     $ cd fetch_podcast
     $ lein uberjar
-    $ cp target/uberjar/fetch_podcast-0.4.0-standalone.jar ${SOMEWHERE}
+    $ cp target/uberjar/fetch_podcast-0.5.0-standalone.jar ${SOMEWHERE}
 
 ## Usage
 
-    $ java -jar ${SOMEWHERE}/fetch_podcast-0.4.0-standalone.jar Opts FeedsOrEpisodes
+    $ java -jar ${SOMEWHERE}/fetch_podcast-0.5.0-standalone.jar Opts FeedsOrEpisodes
 
 When run with no arguments, fetch\_podcast will download any new episodes from
 all configured feeds.
@@ -23,15 +23,17 @@ all configured feeds.
 
 * -v : Verbose mode.  Specify twice for more detail.
 
-* -c : Catch up on podcasts, without downloading them (i.e., mark all read)
+* -c : Catch up on podcasts, without downloading them (i.e., mark all read).
 
-* -d : Dry-run, not downloading anything nor marking it read
+* -d : Dry-run, not downloading anything nor marking it read.
 
-* -e : Download specified episodes (rather than specified feeds)
+* -e : Download specified episodes (rather than specified feeds).
+
+* -C : Use cached XML feeds, rather than downloading new copies.
 
 * -i : Reset list of podcasts already downloaded.
 
-* -F : Force refresh of cached feed XML files
+* -F : Force refresh of cached feed XML files.
 
 ## Getting started
 

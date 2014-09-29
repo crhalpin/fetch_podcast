@@ -65,7 +65,13 @@ filename determined from your naming function.
 Once everything is configured, it should be sufficient to periodically
 run fetch\_podcast to download new episodes from your feeds.
 
-You can also specify feed names (PenAddict or FLOSS_Weekly in the
-above example) to operate on particular feeds (listing them, downloading them,
-or marking them read).  Alternately, with the "-e" argument, you can specify
-particular episodes (using their unique identifier) rather than feeds.
+Some podcasts include every episode ever made in their feed, and you may not
+wish to listen to all of them.  You can get a list of episodes for particular
+feeds by naming them on the command line (e.g., "-dv PenAddict").  To mark
+everything read for a particular feed, you can use the "-c" option.  If you
+want to be sure that it does not also mark new episodes that may have been
+added between running "-dv PenAddict" and "-c PenAddict", you can add the "-C"
+option so that fetch\_podcast will use cached feeds only.
+
+Alternately, with the "-e" argument, you can specify particular episodes (using
+their unique identifier) rather than feeds.
