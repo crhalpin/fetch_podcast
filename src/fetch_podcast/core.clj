@@ -54,6 +54,20 @@
           (str/replace "=" "")
           (str/replace "/" "_") ))))
 
+(defn lim_expires
+  "Limit expires headers not to exceed 7 days from now"
+  [resp]
+  (if (contains? resp "Expires")
+    (let [ex (new java.util.Date (resp "Expires"))
+          ft  (let [cal (java.util.Calendar/getInstance)]
+                (. cal setTime (new java.util.Date))
+                (. cal add (. java.util.Calendar DATE) 7)
+                (. cal getTime)) ]
+      (if (pos? (compare ex ft))
+        (assoc resp "Expires" ft)
+        resp))
+    resp))
+
 (defn get_key [x] (keyword (sha256 x)))
 
 (defn parse_item
@@ -152,7 +166,7 @@
                (do (if (> verbosity 1)
                      (println "\tFetching"))
                    (spit (cache_fname feed) (http_resp :body))
-                   { (get_key url) (http_resp :headers) } )
+                   { (get_key url) (lim_expires (http_resp :headers)) } )
 
              :else
                (throw (str "Error loading " url)))))))))
