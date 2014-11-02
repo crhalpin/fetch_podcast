@@ -120,9 +120,6 @@
             ; last time that we fetched it.
             headers
             (cond
-             ; On our initial fetch, don't use any additional headers
-             (nil? last_resp) {}
-
              ; If our cached data is still good, set the headers to
              ; nil to indicate that we should skip the fetch.
              (and (contains? last_resp "Expires")
@@ -140,8 +137,7 @@
              (contains? last_resp "Last-Modified")
                {"If-Modified-Since" (last_resp "Last-Modified")}
 
-             ; If we have none of those, also don't use any additional
-             ; headers
+             ; If we have none of those, don't use any additional headers
              :else {} )]
 
         (if (> verbosity 1)
