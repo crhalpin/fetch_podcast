@@ -1,4 +1,4 @@
-(defproject fetch_podcast "0.5.1"
+(defproject fetch_podcast "0.5.2"
   :description "Simple command-line podcast fetcher"
   :url "https://github.com/crhalpin/fetch_podcast"
   :license {:name "BSD 2-Clause"

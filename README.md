@@ -10,11 +10,11 @@ downloaded files.  It is written in [clojure](http://clojure.org/) and uses the
     $ git clone https://github.com/crhalpin/fetch_podcast.git
     $ cd fetch_podcast
     $ lein uberjar
-    $ cp target/uberjar/fetch_podcast-0.5.1-standalone.jar ${SOMEWHERE}
+    $ cp target/uberjar/fetch_podcast-0.5.2-standalone.jar ${SOMEWHERE}
 
 ## Usage
 
-    $ java -jar ${SOMEWHERE}/fetch_podcast-0.5.1-standalone.jar Opts FeedsOrEpisodes
+    $ java -jar ${SOMEWHERE}/fetch_podcast-0.5.2-standalone.jar Opts FeedsOrEpisodes
 
 When run with no arguments, fetch\_podcast will download any new episodes from
 all configured feeds.
