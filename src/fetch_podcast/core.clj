@@ -55,7 +55,7 @@
           (str/replace "/" "_") ))))
 
 (defn lim_expires
-  "Limit expires headers not to exceed 7 days from now"
+  "Limit expires headers not to exceed 7 days from now."
   [resp]
   (if (contains? resp "Expires")
     (let [ex (new java.util.Date (resp "Expires"))
@@ -172,8 +172,6 @@
   [feed done tgts options]
   (let [verbosity (options :verbosity)
         ep_tgts (if (options :episodes) tgts nil)
-        fd_tgts (if (and (not (options :episodes))
-                         (not (empty? tgts))) tgts nil)
         file (cache_fname feed)]
 
     (if (not (file_exists file))
@@ -188,9 +186,7 @@
 
         ; If we have no more items, or if there is a list of feeds that
         ; we're not on, then we're done
-        (if (or (empty? items)
-                (and (not (nil? fd_tgts))
-                     (not (contains? tgts (feed :title))) ))
+        (if (empty? items)
           new_items
 
           (let [hd (first items) tl (rest items)
@@ -236,22 +232,25 @@
         options (opt_map :options)
         tgts    (into #{} (opt_map :arguments)) ]
 
-    ;TODO: Print a warning for unknown feeds
     (loop
-      [feeds (read_pref "feeds.clj" [])
-       cache (read_pref "cache_metadata.clj" {} (options :force-fetch) )
-       done  (read_pref "fetchlog.clj" #{} (options :init) ) ]
+        [feeds (let [feeds (read_pref "feeds.clj" [])]
+                 (if (and (not (options :episodes))
+                          (not (empty? tgts)) )
+                   (filter #(contains? tgts (% :title)) feeds)
+                   feeds))
+         cache (read_pref "cache_metadata.clj" {} (options :force-fetch) )
+         done  (read_pref "fetchlog.clj" #{} (options :init) ) ]
 
-    ; If there were no feeds left to fetch, we're done.
-    ; Save a fetchlog and exit
-    (if (empty? feeds)
-      (do
-        (save_pref "fetchlog.clj" done)
-        (save_pref "cache_metadata.clj" cache) )
+      ; If there were no feeds left to fetch, we're done.
+      ; Save a fetchlog and exit
+      (if (empty? feeds)
+        (do
+          (save_pref "fetchlog.clj" done)
+          (save_pref "cache_metadata.clj" cache) )
 
-      ; Otherwise, process the current feed
-      (let [fhd (first feeds) ftl (rest feeds)]
-        (recur ftl
-               (merge cache (fetch_feed fhd cache options))
-               (set/union done
-                          (process_feed fhd done tgts options)) ))))))
+        ; Otherwise, process the current feed
+        (let [fhd (first feeds) ftl (rest feeds)]
+          (recur ftl
+                 (merge cache (fetch_feed fhd cache options))
+                 (set/union done
+                            (process_feed fhd done tgts options)) ))))))
