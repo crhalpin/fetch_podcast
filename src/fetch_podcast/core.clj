@@ -59,10 +59,10 @@
   [resp]
   (if (contains? resp "Expires")
     (let [ex (new java.util.Date (resp "Expires"))
-          ft  (let [cal (java.util.Calendar/getInstance)]
-                (. cal setTime (new java.util.Date))
-                (. cal add (. java.util.Calendar DATE) 7)
-                (. cal getTime)) ]
+          ft (let [cal (java.util.Calendar/getInstance)]
+               (. cal setTime (new java.util.Date))
+               (. cal add (. java.util.Calendar DATE) 7)
+               (. cal getTime)) ]
       (if (pos? (compare ex ft))
         (assoc resp "Expires" ft)
         resp))
@@ -115,7 +115,7 @@
 
       (let [url (feed :feed)
             last_resp (cache (get_key url))
-            ; Decide what additional headers shoudl be included when
+            ; Decide what additional headers should be included when
             ; we fetch this feed, based on the http response from the
             ; last time that we fetched it.
             headers
@@ -138,7 +138,8 @@
                {"If-Modified-Since" (last_resp "Last-Modified")}
 
              ; If we have none of those, don't use any additional headers
-             :else {} )]
+             :else
+               {})]
 
         (if (> verbosity 1)
           (do (println (str "Updating " (feed :title) " from " url ))))
@@ -184,11 +185,11 @@
       (loop [new_items #{}
              items (parse_feed (xml/parse file)) ]
 
-        ; If we have no more items, or if there is a list of feeds that
-        ; we're not on, then we're done
+        ; If we have no more items then we're done
         (if (empty? items)
           new_items
 
+          ; Otherwise, iterate over the remaining items.
           (let [hd (first items) tl (rest items)
                 hv (sha256 (hd :enclosure))]
 
@@ -196,9 +197,10 @@
             ;  that this is not on, then proceed to the next item
             (if (or (contains? done (keyword hv))
                     (and (not (nil? ep_tgts))
-                         (not (contains? tgts hv ))))
+                         (not (contains? tgts hv))) )
               (recur new_items tl)
 
+              ; Otherwise, fetch this ep
               (let [url (hd :enclosure)
                     ; Figure out the target filename by calling the
                     ; name_fn from the feed config.
@@ -238,8 +240,8 @@
                           (not (empty? tgts)) )
                    (filter #(contains? tgts (% :title)) feeds)
                    feeds))
-         cache (read_pref "cache_metadata.clj" {} (options :force-fetch) )
-         done  (read_pref "fetchlog.clj" #{} (options :init) ) ]
+         cache (read_pref "cache_metadata.clj" {} (options :force-fetch))
+         done  (read_pref "fetchlog.clj" #{} (options :init)) ]
 
       ; If there were no feeds left to fetch, we're done.
       ; Save a fetchlog and exit
