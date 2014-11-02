@@ -124,7 +124,11 @@
              (contains? last_resp "ETag")
                {"If-None-Match" (last_resp "ETag") }
              (contains? last_resp "Last-Modified")
-               {"If-Modified-Since" (last_resp "Last-Modified")} )]
+               {"If-Modified-Since" (last_resp "Last-Modified")}
+
+             ; If we have none of those, also don't use any additional
+             ; headers
+             :else {} )]
 
         (if (> verbosity 1)
           (do (println (str "Updating " (feed :title) " from " url ))))
