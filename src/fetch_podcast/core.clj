@@ -36,13 +36,13 @@
   [feed]
   (do_homedir (str "~/.fetch_podcast/cache/" (feed :title))))
 
-(defn copy
+(defn get_file
   "Copy a URI to a file, if the target did not exist."
   [uri file]
   (if (not (file_exists file))
-    (with-open [in (io/input-stream uri)
-                out (io/output-stream file)]
-      (io/copy in out))))
+    (let [http_resp (http/get uri {:as :byte-array})]
+      (with-open [out (io/output-stream file)]
+        (io/copy (http_resp :body) out)))))
 
 (defn sha256
   "Get a base64(ish) sha256 of a string."
@@ -211,7 +211,7 @@
                   (if (> verbosity 0) (println (str hv "\n\t" url) ))
                   (if (not (or (options :catchup)
                                (options :dry-run)))
-                    (copy url ftgt))
+                    (get_file url ftgt))
                   (if (> verbosity 0)  (println (str "\t-> " ftgt)))
                   (if (options :dry-run)
                     (recur new_items tl)
