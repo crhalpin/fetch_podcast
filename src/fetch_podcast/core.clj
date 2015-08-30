@@ -191,13 +191,13 @@
 
           ; Otherwise, iterate over the remaining items.
           (let [hd (first items) tl (rest items)
-                hv (sha256 (hd :enclosure))]
+                hv (sha256 (hd :guid))]
 
             ; If we've already gotten this ep, or if there was a list of eps
             ;  that this is not on, then proceed to the next item
             (if (or (contains? done (keyword hv))
                     (and (not (nil? ep_tgts))
-                         (not (contains? tgts hv))) )
+                         (not (contains? ep_tgts hv))) )
               (recur new_items tl)
 
               ; Otherwise, fetch this ep
@@ -216,7 +216,7 @@
                   (if (options :dry-run)
                     (recur new_items tl)
                     (recur (conj new_items
-                                 (get_key url)) tl)))))))))))
+                                 (get_key (hd :guid))) tl)))))))))))
 
 (defn -main [& args]
   ; Parse arguments
