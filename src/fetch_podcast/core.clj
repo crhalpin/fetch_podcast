@@ -172,7 +172,6 @@
   "Process a specified feed, downloading enclosures as required."
   [feed done tgts options]
   (let [verbosity (options :verbosity)
-        ep_tgts (if (options :episodes) tgts nil)
         file (cache_fname feed)]
 
     (if (not (file_exists file))
@@ -196,8 +195,8 @@
             ; If we've already gotten this ep, or if there was a list of eps
             ;  that this is not on, then proceed to the next item
             (if (or (contains? done (keyword hv))
-                    (and (not (nil? ep_tgts))
-                         (not (contains? ep_tgts hv))) )
+                    (and (options :episodes)
+                         (not (contains? tgts hv))) )
               (recur new_items tl)
 
               ; Otherwise, fetch this ep
