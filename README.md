@@ -41,7 +41,7 @@ see doc/intro.md
 
 ## Updating
 
-Versions prior to 0.5.5 incorrectly used the 'enclosure' rather than the 'guid'
+Versions prior to 0.5.4 incorrectly used the 'enclosure' rather than the 'guid'
 element to determine if an episode had already been downloaded.  As a result,
 changes to the download locations could cause unwanted repeated downloads.
 This has been remedied, but users upgrading from a newer version will want to
