@@ -10,11 +10,11 @@ downloaded files.  It is written in [clojure](http://clojure.org/) and uses the
     $ git clone https://github.com/crhalpin/fetch_podcast.git
     $ cd fetch_podcast
     $ lein uberjar
-    $ cp target/uberjar/fetch_podcast-0.5.4-standalone.jar ${SOMEWHERE}
+    $ cp target/uberjar/fetch_podcast-0.5.5-standalone.jar ${SOMEWHERE}
 
 ## Usage
 
-    $ java -jar ${SOMEWHERE}/fetch_podcast-0.5.4-standalone.jar Opts FeedsOrEpisodes
+    $ java -jar ${SOMEWHERE}/fetch_podcast-0.5.5-standalone.jar Opts FeedsOrEpisodes
 
 When run with no arguments, fetch\_podcast will download any new episodes from
 all configured feeds.
@@ -41,7 +41,7 @@ see doc/intro.md
 
 ## Updating
 
-Versions prior to 0.5.4 incorrectly used the 'enclosure' rather than the 'guid'
+Versions prior to 0.5.5 incorrectly used the 'enclosure' rather than the 'guid'
 element to determine if an episode had already been downloaded.  As a result,
 changes to the download locations could cause unwanted repeated downloads.
 This has been remedied, but users upgrading from a newer version will want to

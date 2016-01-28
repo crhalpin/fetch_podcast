@@ -8,6 +8,8 @@
   (:require [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
 
+(def user_agent "fetch_podcast/0.5.5")
+
 (defn do_homedir
   "Expand ~/ to current user's HOME."
   [fname]
@@ -40,9 +42,9 @@
   "Copy a URI to a file, if the target did not exist."
   [uri file]
   (if (not (file_exists file))
-    (let [http_resp (http/get uri {:as :byte-array})]
-      (with-open [out (io/output-stream file)]
-        (io/copy (http_resp :body) out)))))
+    (with-open [in (io/input-stream uri)
+                out (io/output-stream file)]
+      (io/copy in out))))
 
 (defn sha256
   "Get a base64(ish) sha256 of a string."
@@ -150,7 +152,10 @@
               nil)
 
           ; If we need a new fetch, then do one.
-          (let [http_resp (http/get url {:headers headers :throw-exceptions false}) ]
+          (let [http_resp
+                (http/get url {:headers headers
+                               :client-params {"http.useragent" user_agent}
+                               :throw-exceptions false}) ]
             (cond
              ; If the response is 304, use cached data.
              (= (http_resp :status) 304)
@@ -232,6 +237,7 @@
         opt_map (parse-opts args cli-options)
         options (opt_map :options)
         tgts    (into #{} (opt_map :arguments)) ]
+    (System/setProperty "http.agent" user_agent)
 
     (loop
         [feeds (let [feeds (read_pref "feeds.clj" [])]
