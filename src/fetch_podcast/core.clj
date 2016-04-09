@@ -8,7 +8,7 @@
   (:require [clojure.tools.cli :refer [parse-opts]])
   (:gen-class))
 
-(def user_agent "fetch_podcast/0.5.5")
+(def user_agent "fetch_podcast/0.5.6")
 
 (defn do_homedir
   "Expand ~/ to current user's HOME."
@@ -171,7 +171,9 @@
                    { (get_key url) (lim_expires (http_resp :headers)) } )
 
              :else
-               (throw (str "Error loading " url)))))))))
+               (do (if (> verbosity 1)
+                     (println (str "Error loading " url)))
+                   nil) )))))))
 
 (defn process_feed
   "Process a specified feed, downloading enclosures as required."
