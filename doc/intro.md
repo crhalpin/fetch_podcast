@@ -2,7 +2,7 @@
 
 ## Creating feeds.clj
 
-fetch\_podcast reads a list of feeds from ~/.fetch_podcast/feeds.clj.
+fetch\_podcast reads a list of feeds from \~/.fetch_podcast/feeds.clj.
 This file contains a clojure vector where each element is a map that
 describes a feed.  Each map must contain 'title', 'path', 'feed', and
 'name\_fn'.  For example:
@@ -29,10 +29,10 @@ describes a feed.  Each map must contain 'title', 'path', 'feed', and
     ]
 
 The above defines two feeds.  The first, "FLOSS\_Weekly", will be
-downloaded to "~/Podcasts/FLOSS\_Weekly", pulled from
+downloaded to "\~/Podcasts/FLOSS\_Weekly", pulled from
 "http://leo.am/podcasts/floss", and which uses a name function that
 just takes the last element of the enclosure from the podcast feed.
-The second, "PenAddict", will be downloaded to "~/Podcasts/PenAddict",
+The second, "PenAddict", will be downloaded to "\~/Podcasts/PenAddict",
 pulled from "http://relay.fm/penaddict/feed", with a somewhat more
 complex naming function.
 
@@ -54,7 +54,7 @@ colon.
 
 Before the first time you run fetch\_podcast, you will need to create
 all the directories mentioned in your feeds.clj, as well as
-"~/.fetch\_podcast/cache".
+"\~/.fetch\_podcast/cache".
 
 You will probably want to run fetch\_podcast with the "-dv" options, to make
 sure that your naming functions work as desired.  In verbose mode,
