@@ -25,6 +25,9 @@ all configured feeds.
 
 * -c : Catch up on podcasts, without downloading them (i.e., mark all read).
 
+* -n NUM : Maximum number of episodes to download. When not specified, all
+  avaiable new episodes are downloaded.
+
 * -d : Dry-run, not downloading anything nor marking it read.
 
 * -e : Download specified episodes (rather than specified feeds).
