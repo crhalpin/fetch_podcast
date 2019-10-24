@@ -4,8 +4,8 @@
 
 fetch\_podcast reads a list of feeds from \~/.fetch\_podcast/feeds.clj.
 This file contains a clojure vector where each element is a map that
-describes a feed.  Each map must contain 'title', 'path', 'feed', and
-'name\_fn'.  For example:
+describes a feed.  Each map must contain `title`, `path`, `feed`, and
+`name_fn`.  For example:
 
     [{:title "FLOSS_Weekly"
       :path "~/Podcasts/FLOSS_Weekly"
@@ -58,26 +58,25 @@ colon.
 
 ## Downloading podcasts
 
-You will probably want to run fetch\_podcast with the "-dv" options, to make
+You will probably want to run fetch\_podcast with the `-dv` options, to make
 sure that your naming functions work as desired.  In verbose mode,
 fetch\_podcast outputs three lines for each episodes.  The first is a unique
 identifier, the second is the URL of the enclosure, and the third is the
 filename determined from your naming function.
 
 You can get a list of episodes for particular feeds by naming them on the
-command line (e.g., "-dv PenAddict").  Individual episodes can be downloaded by
-using the "-e" option and providing their unique identifier.
+command line (e.g., `-dv PenAddict`).  Individual episodes can be downloaded by
+using the `-e` option and providing their unique identifier.
 
 Adding a new feed typically works as follows:
 
   - (edit feeds.clj)
 
-  - `fetch\_podcast -dv NewFeed` to be sure your naming is working as desired
+  - `fetch_podcast -dv NewFeed` to be sure your naming is working as desired
 
-  - `fetch\_podcast -Cv -n3 NewFeed` to download the 3 most recent episodes.
+  - `fetch_podcast -Cv -n3 NewFeed` to download the 3 most recent episodes.
 
-  - `fetch\_podcast -Ccv NewFeed` to mark all older episodes read.
+  - `fetch_podcast -Ccv NewFeed` to mark all older episodes read.
 
 Once everything is configured, it should be sufficient to periodically
 run fetch\_podcast (e.g. from `cron`) to download new episodes from your feeds.
-
