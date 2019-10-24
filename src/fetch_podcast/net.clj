@@ -24,6 +24,34 @@
     resp))
 
 
+(defn get_headers
+  "Determine HTTP headers based on last response."
+  [last_resp]
+  (cond
+    ; If our cached data is still good, set the headers to
+    ; nil to indicate that we should skip the fetch.
+    (and (contains? last_resp "Expires")
+         (pos? (compare (new java.util.Date (last_resp "Expires"))
+                        (new java.util.Date))))
+    nil
+
+    ; If we have an Etag, ETag, or Last-Modified, then use
+    ; that on our next fetch.  Prefer the Etag to the
+    ; Last-Modified in the case that we have both.
+    (contains? last_resp "Etag")
+    {"If-None-Match" (last_resp "Etag") }
+
+    (contains? last_resp "ETag")
+    {"If-None-Match" (last_resp "ETag") }
+
+    (contains? last_resp "Last-Modified")
+    {"If-Modified-Since" (last_resp "Last-Modified")}
+
+    ; If we have none of those, don't use any additional headers
+    :else
+    {}))
+
+
 (defn fetch_feed
   "Fetch an XML feed with caching and If-None-Match/If-Modified-Since."
   [feed cache options]
@@ -33,39 +61,16 @@
 
       (let [url (feed :feed)
             last_resp (cache (get_key url))
-            ; Decide what additional headers should be included when
-            ; we fetch this feed, based on the http response from the
-            ; last time that we fetched it.
-            headers
-            (cond
-             ; If our cached data is still good, set the headers to
-             ; nil to indicate that we should skip the fetch.
-             (and (contains? last_resp "Expires")
-                  (pos? (compare (new java.util.Date (last_resp "Expires"))
-                                 (new java.util.Date))))
-               nil
-
-             ; If we have an Etag, ETag, or Last-Modified, then use
-             ; that on our next fetch.  Prefer the Etag to the
-             ; Last-Modified in the case that we have both.
-             (contains? last_resp "Etag")
-               {"If-None-Match" (last_resp "Etag") }
-             (contains? last_resp "ETag")
-               {"If-None-Match" (last_resp "ETag") }
-             (contains? last_resp "Last-Modified")
-               {"If-Modified-Since" (last_resp "Last-Modified")}
-
-             ; If we have none of those, don't use any additional headers
-             :else
-               {})]
+            headers (get_headers last_resp)]
 
         (if (> verbosity 1)
           (do (println (str "Updating " (feed :title) " from " url ))))
 
         (if (nil? headers)
-          (do (if (> verbosity 1)
-                (println "\tNot expired, using cache"))
-              nil)
+          (do
+            (if (> verbosity 1)
+              (println "\tNot expired, using cache"))
+            nil)
 
           ; If we need a new fetch, then do one.
           (let [http_resp
@@ -74,22 +79,24 @@
                                :throw-exceptions false}) ]
             (cond
              ; If the response is 304, use cached data.
-             (= (http_resp :status) 304)
-               (do (if (> verbosity 1)
-                     (println "\tGot 304, using cache"))
-                   nil)
+              (= (http_resp :status) 304)
+              (do
+                (if (> verbosity 1)
+                  (println "\tGot 304, using cache"))
+                nil)
 
              ; If the response was 200, stick the new data in the cache.
-             (= (http_resp :status) 200)
-               (do
-                 (if (> verbosity 1)
-                   (println "\tFetching"))
-                 (let [fname (cache_fname feed)]
-                   (io/make-parents fname)
-                   (spit fname (http_resp :body)))
-                 { (get_key url) (lim_expires (http_resp :headers)) } )
+              (= (http_resp :status) 200)
+              (do
+                (if (> verbosity 1)
+                  (println "\tFetching"))
+                (let [fname (cache_fname feed)]
+                  (io/make-parents fname)
+                  (spit fname (http_resp :body)))
+                { (get_key url) (lim_expires (http_resp :headers)) } )
 
-             :else
-               (do (if (> verbosity 1)
-                     (println (str "Error loading " url)))
-                   nil) )))))))
+              :else
+              (do
+                (if (> verbosity 1)
+                  (println (str "Error loading " url)))
+                nil) )))))))
