@@ -10,13 +10,15 @@
   (:gen-class))
 
 
-(defn name_fn [name_fn_raw x hv]
+(defn name_fn [name_fn_raw feed hv]
   "Apply a feed's name function with a faillback when it fails"
-  (try (name_fn_raw x)
-       (catch Exception e
-         (-> (x :enclosure)
-             (get_fname)
-             (#(str (subs hv 0 10) "-" %))))))
+  (do_homedir
+   (str (feed :path) "/"
+        (try (name_fn_raw feed)
+             (catch Exception e
+               (-> (feed :enclosure)
+                   (get_fname)
+                   (#(str (subs hv 0 10) "-" %))))))))
 
 
 (defn process_feed
@@ -24,7 +26,19 @@
   [feed done tgts options]
   (let [verbosity (options :verbosity)
         file (cache_fname feed)
-        name_fn_raw (eval (feed :name_fn)) ]
+        name_fn_raw (eval (feed :name_fn))
+        ; Episodes be skipped over when:
+        skip? (fn [options tgts done item_cnt hv]
+                (or
+                 ; 1) This ep has already been fetched
+                 (contains? done (keyword hv))
+                 ; 2) We've fetched enough episodes
+                 (and (contains? options :number)
+                      (>= item_cnt (options :number)))
+                 ; 3) A list of eps was provided and this ep is
+                 ; not on it
+                 (and (options :episodes)
+                      (not (contains? tgts hv))))) ]
 
     (if (not (file_exists file))
       (do (if (> verbosity 0)
@@ -42,35 +56,41 @@
           new_items
 
           ; Otherwise, iterate over the remaining items.
-          (let [hd (first items) tl (rest items)
-                hv (sha256 (hd :guid))]
+          (let [hd (first items)
+                tl (rest items)
+                hv (sha256 (hd :guid)) ]
 
-            ; If we've already gotten this ep, we've gotten enough eps, or if
-            ; there was a list of eps that this is not on, then proceed to the
-            ; next item
-            (if (or (contains? done (keyword hv))
-                    (and (contains? options :number)
-                         (>= item_cnt (options :number)))
-                    (and (options :episodes)
-                         (not (contains? tgts hv))) )
+            (if (skip? options tgts done item_cnt hv)
               (recur new_items tl item_cnt)
 
-              ; Otherwise, fetch this ep
+              ; Otherwise, fetch this episode
               (let [url (hd :enclosure)
-                    ; Figure out the target filename by calling the
-                    ; name_fn from the feed config.
-                    ftgt (do_homedir
-                          (str (feed :path) "/" (name_fn name_fn_raw hd hv))) ]
+                    ftgt (name_fn name_fn_raw hd hv)]
                 (do
-                  (if (> verbosity 0) (println (str hv "\n\t" url) ))
+                  (if (> verbosity 0)
+                    (println (str hv "\n\t" url) ))
                   (if (not (or (options :catchup)
                                (options :dry-run)))
                     (get_file url ftgt))
-                  (if (> verbosity 0)  (println (str "\t-> " ftgt)))
+                  (if (> verbosity 0)
+                    (println (str "\t-> " ftgt)))
                   (if (options :dry-run)
                     (recur new_items tl (inc item_cnt) )
-                    (recur (conj new_items
-                                 (get_key (hd :guid))) tl (inc item_cnt))))))))))))
+                    (recur
+                     (conj new_items (get_key (hd :guid)))
+                     tl
+                     (inc item_cnt)) ))))))))))
+
+
+(defn feed_list
+  "Read the list of configured feeds, filtering as necessary"
+  [options tgts]
+  (let [feeds (read_feeds)]
+    (if (and (not (options :episodes))
+             (not (empty? tgts)) )
+      (filter #(contains? tgts (% :title)) feeds)
+      feeds)))
+
 
 (defn -main [& args]
   ; Parse arguments
@@ -88,15 +108,9 @@
         opt_map (parse-opts args cli-options)
         options (opt_map :options)
         tgts    (into #{} (opt_map :arguments)) ]
-
     (System/setProperty "http.agent" user_agent)
-
     (loop
-        [feeds (let [feeds (read_feeds)]
-                 (if (and (not (options :episodes))
-                          (not (empty? tgts)) )
-                   (filter #(contains? tgts (% :title)) feeds)
-                   feeds))
+        [feeds (feed_list options tgts)
          cache (read_pref "cache_metadata.clj" {} (options :force-fetch))
          done  (read_pref "fetchlog.clj" #{} (options :init)) ]
 
@@ -108,8 +122,10 @@
           (save_pref "cache_metadata.clj" cache) )
 
         ; Otherwise, process the current feed
-        (let [fhd (first feeds) ftl (rest feeds)]
-          (recur ftl
-            (merge cache (fetch_feed fhd cache options))
-            (set/union done
-              (process_feed fhd done tgts options)) ))))))
+        (let [fhd (first feeds)
+              ftl (rest feeds)
+              new_cache
+                (merge cache (fetch_feed fhd cache options))
+              new_done
+                (set/union done (process_feed fhd done tgts options)) ]
+          (recur ftl new_cache new_done) )))))
