@@ -2,7 +2,7 @@
   (:require [clojure.java.io :as io])
   (:require [clojure.data.codec.base64 :as b64])
   (:require [clj-http.client :as http])
-  (:use fetch-podcast.util)
+  (:require [fetch-podcast.util :as fp-util])
   (:gen-class))
 
 
@@ -60,7 +60,7 @@
       nil ; If we're only using cached feeds, skip fetching new ones.
 
       (let [url (feed :feed)
-            last_resp (cache (get_key url))
+            last_resp (cache (fp-util/get_key url))
             headers (get_headers last_resp)]
 
         (if (> verbosity 1)
@@ -90,10 +90,10 @@
               (do
                 (if (> verbosity 1)
                   (println "\tFetching"))
-                (let [fname (cache_fname feed)]
+                (let [fname (fp-util/cache_fname feed)]
                   (io/make-parents fname)
                   (spit fname (http_resp :body)))
-                { (get_key url) (lim_expires (http_resp :headers)) } )
+                { (fp-util/get_key url) (lim_expires (http_resp :headers)) } )
 
               :else
               (do

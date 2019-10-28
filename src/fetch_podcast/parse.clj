@@ -2,7 +2,7 @@
   (:gen-class))
 
 
-(defn parse_item
+(defn item
   "Parse an XML item to produce a map describing the feed."
   [xdata]
   (loop [rc {} elem xdata]
@@ -23,7 +23,7 @@
            (recur rc tl))))))
 
 
-(defn parse_feed
+(defn feed
   "Parse an XML feed, returning an array of maps describing the enclosures."
   [xdata]
   ; Feeds start out as <rss><channel>, so grab the content of the channel
@@ -36,5 +36,5 @@
         ; If the current element is an item, we want to parse it.
         ; Otherwise, move on to the next element.
         (if (= (hd :tag) :item)
-          (recur (conj rc (parse_item (hd :content))) tl )
+          (recur (conj rc (item (hd :content))) tl )
           (recur rc tl))))))

@@ -49,18 +49,18 @@
 
 
 (defn strip_nonword
-  "Squeeze and replace non-word characters"
+  "Squeeze and replace non-word characters."
   [x]
-  (-> x (clojure.string/trim)
-        (clojure.string/replace #"[^\w ]+" "")
-        (clojure.string/replace #" +" "_")))
+  (-> x (str/trim)
+        (str/replace #"[^\w ]+" "")
+        (str/replace #" +" "_")))
 
 
 (defn get_fname
-  "Get the filename from the end of a link"
+  "Get the filename from the end of a link."
   [x]
-  (-> x (clojure.string/split #"/")
+  (-> x (str/split #"/")
         (reverse)
         (first)
-        (clojure.string/split #"[?#]")
+        (str/split #"[?#]")
         (first) ))
