@@ -41,11 +41,17 @@
   "Copy a URI to a file, if the target did not exist."
   [uri file]
   (if (not (file_exists file))
-    (do
+    (let [ts (quot (System/currentTimeMillis) 1000)
+          rn (str/replace (rand) "0." "")
+          tgt (str "/tmp/" ts "_" rn) ]
       (io/make-parents file)
-      (with-open [in  (io/input-stream uri)
+      (with-open [in (io/input-stream uri)
+                  out (io/output-stream tgt)]
+        (io/copy in out))
+      (with-open [in (io/input-stream tgt)
                   out (io/output-stream file)]
-        (io/copy in out)))))
+        (io/copy in out))
+      (io/delete-file tgt))))
 
 
 (defn strip_nonword
